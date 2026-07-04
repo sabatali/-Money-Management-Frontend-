@@ -13,7 +13,7 @@ import { api } from '../../services/api'
 const AddGroupExpense = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { token, user, refreshAccountBalances, refreshTransactions } = useAppContext()
+  const { token, user, refreshAccountBalances, refreshTransactions, convertToPKR } = useAppContext()
   const { accountBalances } = useEnsureAccountBalances()
   const [group, setGroup] = useState(null)
   const [myGroupAccounts, setMyGroupAccounts] = useState({ linkedAccounts: [], availableAccounts: [] })
@@ -102,10 +102,7 @@ const AddGroupExpense = () => {
         (account) => account.name === form.accountUsed,
       )
       const available = Number(selected?.currentBalancePKR ?? 0)
-      const spending =
-        form.currency === 'USD'
-          ? Math.round(Number(form.totalAmountOriginal || 0) * 280)
-          : Number(form.totalAmountOriginal || 0)
+      const spending = convertToPKR(Number(form.totalAmountOriginal || 0), form.currency)
       if (form.accountUsed && spending > available) {
         setWarning(
           `Insufficient balance. Available PKR ${available.toLocaleString()}.`,

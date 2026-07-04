@@ -27,6 +27,7 @@ const TransferForm = () => {
     refreshAccountBalances,
     addTransfer,
     updateTransfer,
+    convertToPKR,
   } = useAppContext()
   const { accountBalances } = useEnsureAccountBalances()
   const editing = Boolean(id)
@@ -77,14 +78,8 @@ const TransferForm = () => {
       (account) => account.name === form.fromAccount,
     )
     const available = Number(selected?.currentBalancePKR ?? 0)
-    const transferAmount =
-      form.currency === 'USD'
-        ? Math.round(Number(payload.amountOriginal || 0) * 280)
-        : Number(payload.amountOriginal || 0)
-    const feePKR =
-      form.feeCurrency === 'USD'
-        ? Math.round(feeAmount * 280)
-        : feeAmount
+    const transferAmount = convertToPKR(Number(payload.amountOriginal || 0), form.currency)
+    const feePKR = convertToPKR(feeAmount, form.feeCurrency)
     const totalSpending = transferAmount + feePKR
     if (form.fromAccount && totalSpending > available) {
       setWarning(
@@ -101,10 +96,7 @@ const TransferForm = () => {
     navigate('/transfers')
   }
 
-  const conversionPreview =
-    form.currency === 'USD'
-      ? Math.round(Number(form.amount || 0) * 280)
-      : Number(form.amount || 0)
+  const conversionPreview = convertToPKR(Number(form.amount || 0), form.currency)
 
   return (
     <div className="space-y-6">
@@ -210,19 +202,15 @@ const TransferForm = () => {
                 <div className="mt-1 flex justify-between">
                   <span>Fee (PKR):</span>
                   <span className="font-medium text-amber-200">
-                    {(form.feeCurrency === 'USD'
-                      ? Math.round(Number(form.fee) * 280)
-                      : Number(form.fee)
-                    ).toLocaleString()}
+                    {convertToPKR(Number(form.fee), form.feeCurrency).toLocaleString()}
                   </span>
                 </div>
                 <div className="mt-2 border-t border-app-border-strong pt-2 flex justify-between">
                   <span>Total Deduction (PKR):</span>
                   <span className="font-medium text-app-text">
-                    {(conversionPreview + (form.feeCurrency === 'USD'
-                      ? Math.round(Number(form.fee) * 280)
-                      : Number(form.fee)
-                    )).toLocaleString()}
+                    {(
+                      conversionPreview + convertToPKR(Number(form.fee), form.feeCurrency)
+                    ).toLocaleString()}
                   </span>
                 </div>
                 <p className="mt-2 text-xs text-app-muted/70">

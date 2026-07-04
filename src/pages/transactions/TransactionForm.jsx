@@ -28,6 +28,7 @@ const TransactionForm = () => {
     refreshAccountBalances,
     addTransaction,
     updateTransaction,
+    convertToPKR,
   } = useAppContext()
   const { accountBalances } = useEnsureAccountBalances()
   const editing = Boolean(id)
@@ -71,10 +72,7 @@ const TransactionForm = () => {
       (account) => account.name === form.account,
     )
     const available = Number(selected?.currentBalancePKR ?? 0)
-    const spending =
-      form.currency === 'USD'
-        ? Math.round(Number(payload.amount || 0) * 280)
-        : Number(payload.amount || 0)
+    const spending = convertToPKR(Number(payload.amount || 0), form.currency)
     if (form.type === 'expense' && form.account && spending > available) {
       setWarning(
         `Insufficient balance. Available PKR ${available.toLocaleString()}.`,
@@ -90,10 +88,7 @@ const TransactionForm = () => {
     navigate('/transactions')
   }
 
-  const conversionPreview =
-    form.currency === 'USD'
-      ? Math.round(Number(form.amount || 0) * 280)
-      : Number(form.amount || 0)
+  const conversionPreview = convertToPKR(Number(form.amount || 0), form.currency)
 
   return (
     <div className="space-y-6">
