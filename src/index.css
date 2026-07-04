@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  --color-app-base: #0a0f1a;
+  --color-app-surface: #111827;
+  --color-app-surface-soft: #1a2332;
+  --color-app-surface-elevated: #1f2a3d;
+  --color-app-border: rgb(148 163 184 / 0.12);
+  --color-app-border-strong: rgb(148 163 184 / 0.22);
+  --color-app-accent: #e8b84b;
+  --color-app-accent-hover: #f5cc62;
+  --color-app-accent-muted: rgb(232 184 75 / 0.15);
+  --color-app-primary: #4f8ef7;
+  --color-app-primary-muted: rgb(79 142 247 / 0.15);
+  --color-app-income: #2dd4bf;
+  --color-app-income-muted: rgb(45 212 191 / 0.12);
+  --color-app-expense: #f87171;
+  --color-app-expense-muted: rgb(248 113 113 / 0.12);
+  --color-app-text: #f1f5f9;
+  --color-app-muted: #94a3b8;
+  --color-app-overlay: rgb(10 15 26 / 0.85);
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--color-app-base);
+  color: var(--color-app-text);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgb(79 142 247 / 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgb(232 184 75 / 0.05), transparent);
+}
+
+#root {
+  min-height: 100vh;
+}
