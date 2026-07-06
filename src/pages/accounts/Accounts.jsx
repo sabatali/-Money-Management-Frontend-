@@ -7,10 +7,9 @@ import Input from '../../components/Input'
 import Modal from '../../components/Modal'
 
 const Accounts = () => {
-  const { token } = useAppContext()
+  const { token, exchangeRate, updateExchangeRate, refreshExchangeRate } = useAppContext()
   const [accounts, setAccounts] = useState([])
   const [balances, setBalances] = useState([])
-  const [exchangeRate, setExchangeRate] = useState(280)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -24,7 +23,7 @@ const Accounts = () => {
     currency: 'PKR',
     openingBalance: '',
   })
-  const [rateForm, setRateForm] = useState({ rate: 280 })
+  const [rateForm, setRateForm] = useState({ rate: '' })
 
   useEffect(() => {
     fetchData()
@@ -33,15 +32,13 @@ const Accounts = () => {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [accountsRes, balancesRes, rateRes] = await Promise.all([
+      const [accountsRes, balancesRes] = await Promise.all([
         api.getAccounts(token),
         api.getAccountBalances(token),
-        api.getExchangeRate(token),
       ])
       setAccounts(accountsRes.data || [])
       setBalances(balancesRes.data || [])
-      setExchangeRate(rateRes.data?.rate || 280)
-      setRateForm({ rate: rateRes.data?.rate || 280 })
+      await refreshExchangeRate(token)
     } catch (err) {
       setError(err.message || 'Failed to load accounts')
     } finally {
@@ -93,12 +90,16 @@ const Accounts = () => {
   const handleUpdateRate = async (e) => {
     e.preventDefault()
     try {
-      await api.updateExchangeRate(token, { rate: Number(rateForm.rate) })
+      await updateExchangeRate(Number(rateForm.rate))
       setIsRateModalOpen(false)
-      fetchData()
     } catch (err) {
       setError(err.message || 'Failed to update exchange rate')
     }
+  }
+
+  const openRateModal = () => {
+    setRateForm({ rate: exchangeRate ?? '' })
+    setIsRateModalOpen(true)
   }
 
   const openEditModal = (account) => {
@@ -122,7 +123,7 @@ const Accounts = () => {
   }
 
   const totalBalancePKR = balances.reduce((sum, b) => sum + (b.currentBalancePKR || 0), 0)
-  const totalBalanceUSD = totalBalancePKR / exchangeRate
+  const totalBalanceUSD = exchangeRate ? totalBalancePKR / exchangeRate : null
 
   if (loading) {
     return (
@@ -137,8 +138,10 @@ const Accounts = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-app-text">Accounts</h1>
         <div className="flex gap-3">
-          <Button variant="secondary" onClick={() => setIsRateModalOpen(true)}>
-            Exchange Rate: 1 USD = {exchangeRate} PKR
+          <Button variant="secondary" onClick={openRateModal}>
+            {exchangeRate
+              ? `Exchange Rate: 1 USD = ${exchangeRate} PKR`
+              : 'Set Exchange Rate'}
           </Button>
           <Button onClick={() => setIsAddModalOpen(true)}>Add Account</Button>
         </div>
@@ -161,7 +164,9 @@ const Accounts = () => {
         <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20">
           <div className="text-sm text-app-muted">Total Balance (USD)</div>
           <div className="mt-1 text-2xl font-bold text-app-text">
-            {formatCurrency(totalBalanceUSD, 'USD')}
+            {totalBalanceUSD !== null
+              ? formatCurrency(totalBalanceUSD, 'USD')
+              : 'Set exchange rate'}
           </div>
         </Card>
         <Card className="bg-gradient-to-br from-purple-600/20 to-purple-800/20">
@@ -343,25 +348,27 @@ const Accounts = () => {
             type="number"
             value={rateForm.rate}
             onChange={(e) => setRateForm({ rate: e.target.value })}
-            placeholder="280"
+            placeholder="Enter rate"
             min="1"
             step="0.01"
             required
           />
-          <div className="rounded-lg border border-app-border bg-app-surface p-3 text-sm">
-            <div className="flex justify-between text-app-muted">
-              <span>Example:</span>
-              <span className="text-app-text">
-                1 USD = {Number(rateForm.rate || 280).toLocaleString('en-US')} PKR
-              </span>
+          {rateForm.rate ? (
+            <div className="rounded-lg border border-app-border bg-app-surface p-3 text-sm">
+              <div className="flex justify-between text-app-muted">
+                <span>Example:</span>
+                <span className="text-app-text">
+                  1 USD = {Number(rateForm.rate).toLocaleString('en-US')} PKR
+                </span>
+              </div>
+              <div className="mt-1 flex justify-between text-app-muted">
+                <span>100 USD =</span>
+                <span className="text-app-text">
+                  {(100 * Number(rateForm.rate)).toLocaleString('en-US')} PKR
+                </span>
+              </div>
             </div>
-            <div className="mt-1 flex justify-between text-app-muted">
-              <span>100 USD =</span>
-              <span className="text-app-text">
-                {(100 * Number(rateForm.rate || 280)).toLocaleString('en-US')} PKR
-              </span>
-            </div>
-          </div>
+          ) : null}
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="secondary" onClick={() => setIsRateModalOpen(false)}>
               Cancel

@@ -3,14 +3,8 @@ import { api } from '../services/api'
 
 const AppContext = createContext(null)
 
-const exchangeRate = 280
 const TOKEN_KEY = 'sem_token'
 const USER_KEY = 'sem_user'
-
-const calculateConvertedAmount = (amount, currency) => {
-  if (!amount) return 0
-  return currency === 'USD' ? Math.round(amount * exchangeRate) : Number(amount)
-}
 
 export const AppProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY))
@@ -31,8 +25,29 @@ export const AppProvider = ({ children }) => {
   const [transactions, setTransactions] = useState([])
   const [loans, setLoans] = useState([])
   const [transfers, setTransfers] = useState([])
+  const [exchangeRate, setExchangeRate] = useState(null)
 
   const isAuthenticated = Boolean(token)
+
+  const convertToPKR = (amount, currency) => {
+    if (!amount) return 0
+    if (currency === 'PKR') return Number(amount)
+    if (!exchangeRate) return 0
+    return Math.round(Number(amount) * exchangeRate)
+  }
+
+  const refreshExchangeRate = async (overrideToken) => {
+    const activeToken = overrideToken || token
+    if (!activeToken) return
+    const response = await api.getExchangeRate(activeToken)
+    setExchangeRate(response.data?.rate ?? null)
+  }
+
+  const updateExchangeRate = async (rate) => {
+    const response = await api.updateExchangeRate(token, { rate: Number(rate) })
+    setExchangeRate(response.data?.rate ?? null)
+    return response.data
+  }
 
   const login = async (payload) => {
     setIsLoading(true)
@@ -49,6 +64,7 @@ export const AppProvider = ({ children }) => {
       await refreshTransactions(response.token)
       await refreshLoans(response.token)
       await refreshTransfers(response.token)
+      await refreshExchangeRate(response.token)
       return response.user
     } catch (error) {
       setAuthError(error.message)
@@ -73,6 +89,7 @@ export const AppProvider = ({ children }) => {
       await refreshTransactions(response.token)
       await refreshLoans(response.token)
       await refreshTransfers(response.token)
+      await refreshExchangeRate(response.token)
       return response.user
     } catch (error) {
       setAuthError(error.message)
@@ -91,6 +108,7 @@ export const AppProvider = ({ children }) => {
     setTransactions([])
     setLoans([])
     setTransfers([])
+    setExchangeRate(null)
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
   }
@@ -228,6 +246,7 @@ export const AppProvider = ({ children }) => {
     refreshTransactions()
     refreshLoans()
     refreshTransfers()
+    refreshExchangeRate()
     // Restore session data once when token is available (e.g. page refresh).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
@@ -269,6 +288,10 @@ export const AppProvider = ({ children }) => {
       addTransfer,
       updateTransfer,
       removeTransfer,
+      exchangeRate,
+      convertToPKR,
+      refreshExchangeRate,
+      updateExchangeRate,
     }),
     [
       user,
@@ -282,6 +305,7 @@ export const AppProvider = ({ children }) => {
       transactions,
       loans,
       transfers,
+      exchangeRate,
     ],
   )
 
