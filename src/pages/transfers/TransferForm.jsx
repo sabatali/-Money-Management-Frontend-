@@ -4,6 +4,7 @@ import Button from '../../components/Button'
 import Card from '../../components/Card'
 import Input from '../../components/Input'
 import AccountSelect from '../../components/AccountSelect'
+import SetupRequiredNotice from '../../components/SetupRequiredNotice'
 import { useEnsureAccountBalances } from '../../hooks/useEnsureAccountBalances'
 import { useAppContext } from '../../context/AppContext'
 
@@ -29,7 +30,7 @@ const TransferForm = () => {
     updateTransfer,
     convertToPKR,
   } = useAppContext()
-  const { accountBalances } = useEnsureAccountBalances()
+  const { accounts, accountBalances } = useEnsureAccountBalances()
   const editing = Boolean(id)
   const [form, setForm] = useState(emptyForm)
   const [warning, setWarning] = useState('')
@@ -98,6 +99,8 @@ const TransferForm = () => {
 
   const conversionPreview = convertToPKR(Number(form.amount || 0), form.currency)
 
+  const needsAccounts = !editing && accounts.length < 2
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -114,6 +117,14 @@ const TransferForm = () => {
         </Link>
       </div>
 
+      {needsAccounts ? (
+        <SetupRequiredNotice
+          title="Add at least two accounts"
+          message="Transfers move money between two of your accounts, so you'll need at least two set up first."
+          actionLabel="Manage accounts"
+          actionTo="/accounts"
+        />
+      ) : (
       <Card>
         <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
           <AccountSelect
@@ -238,6 +249,7 @@ const TransferForm = () => {
           </div>
         </form>
       </Card>
+      )}
     </div>
   )
 }
