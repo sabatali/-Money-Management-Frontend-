@@ -1,4 +1,5 @@
 import Button from './Button'
+import VerificationBadge from './VerificationBadge'
 import { useAppContext } from '../context/AppContext'
 import { theme } from '../styles/theme'
 
@@ -11,9 +12,12 @@ const Navbar = ({ title, subtitle, actions }) => {
         <p className="text-xs uppercase tracking-[0.2em] text-app-muted">
           {theme.brand.name} · {theme.brand.tagline}
         </p>
-        <h2 className="text-2xl font-semibold text-app-text">
-          {title || 'Welcome back'}
-        </h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-2xl font-semibold text-app-text">
+            {title || 'Welcome back'}
+          </h2>
+          {user ? <VerificationBadge verified={Boolean(user.emailVerified)} /> : null}
+        </div>
         <p className="mt-1 text-sm text-app-muted">
           {subtitle || `Hi ${user?.name || 'there'}, here's your financial overview.`}
         </p>

@@ -22,8 +22,8 @@ const Login = () => {
     event.preventDefault()
     setError('')
     try {
-      await login({ email: form.email, password: form.password })
-      navigate('/')
+      const result = await login({ email: form.email, password: form.password })
+      navigate(result?.needsOnboarding ? '/onboarding' : '/')
     } catch (err) {
       setError(err.message || 'Login failed.')
     }

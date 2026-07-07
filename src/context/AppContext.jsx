@@ -5,6 +5,7 @@ const AppContext = createContext(null)
 
 const TOKEN_KEY = 'sem_token'
 const USER_KEY = 'sem_user'
+const VERIFY_BANNER_DISMISSED_KEY = 'sem_verify_banner_dismissed'
 
 export const AppProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY))
@@ -26,8 +27,29 @@ export const AppProvider = ({ children }) => {
   const [loans, setLoans] = useState([])
   const [transfers, setTransfers] = useState([])
   const [exchangeRate, setExchangeRate] = useState(null)
+  const [verificationBannerDismissed, setVerificationBannerDismissed] = useState(
+    () => sessionStorage.getItem(VERIFY_BANNER_DISMISSED_KEY) === 'true',
+  )
 
   const isAuthenticated = Boolean(token)
+
+  const dismissVerificationBanner = () => {
+    sessionStorage.setItem(VERIFY_BANNER_DISMISSED_KEY, 'true')
+    setVerificationBannerDismissed(true)
+  }
+
+  const refreshUser = async (overrideToken) => {
+    const activeToken = overrideToken || token
+    if (!activeToken) return null
+    const response = await api.getMe(activeToken)
+    if (response.data) {
+      setUser(response.data)
+      localStorage.setItem(USER_KEY, JSON.stringify(response.data))
+    }
+    return response.data
+  }
+
+  const sendVerificationEmail = async () => api.sendVerificationEmail(token)
 
   const convertToPKR = (amount, currency) => {
     if (!amount) return 0
@@ -58,14 +80,17 @@ export const AppProvider = ({ children }) => {
       setUser(response.user)
       localStorage.setItem(TOKEN_KEY, response.token)
       localStorage.setItem(USER_KEY, JSON.stringify(response.user))
-      await refreshAccounts(response.token)
+      sessionStorage.removeItem(VERIFY_BANNER_DISMISSED_KEY)
+      setVerificationBannerDismissed(false)
+      const userAccounts = await refreshAccounts(response.token)
       await refreshAccountBalances(response.token)
-      await refreshCategories(response.token)
+      const userCategories = await refreshCategories(response.token)
       await refreshTransactions(response.token)
       await refreshLoans(response.token)
       await refreshTransfers(response.token)
       await refreshExchangeRate(response.token)
-      return response.user
+      const needsOnboarding = userAccounts.length === 0 && userCategories.length === 0
+      return { user: response.user, needsOnboarding }
     } catch (error) {
       setAuthError(error.message)
       throw error
@@ -83,14 +108,17 @@ export const AppProvider = ({ children }) => {
       setUser(response.user)
       localStorage.setItem(TOKEN_KEY, response.token)
       localStorage.setItem(USER_KEY, JSON.stringify(response.user))
-      await refreshAccounts(response.token)
+      sessionStorage.removeItem(VERIFY_BANNER_DISMISSED_KEY)
+      setVerificationBannerDismissed(false)
+      const userAccounts = await refreshAccounts(response.token)
       await refreshAccountBalances(response.token)
-      await refreshCategories(response.token)
+      const userCategories = await refreshCategories(response.token)
       await refreshTransactions(response.token)
       await refreshLoans(response.token)
       await refreshTransfers(response.token)
       await refreshExchangeRate(response.token)
-      return response.user
+      const needsOnboarding = userAccounts.length === 0 && userCategories.length === 0
+      return { user: response.user, needsOnboarding }
     } catch (error) {
       setAuthError(error.message)
       throw error
@@ -115,9 +143,11 @@ export const AppProvider = ({ children }) => {
 
   const refreshAccounts = async (overrideToken) => {
     const activeToken = overrideToken || token
-    if (!activeToken) return
+    if (!activeToken) return []
     const response = await api.getAccounts(activeToken)
-    setAccounts(response.data || [])
+    const data = response.data || []
+    setAccounts(data)
+    return data
   }
 
   const refreshAccountBalances = async (overrideToken) => {
@@ -129,9 +159,11 @@ export const AppProvider = ({ children }) => {
 
   const refreshCategories = async (overrideToken) => {
     const activeToken = overrideToken || token
-    if (!activeToken) return
+    if (!activeToken) return []
     const response = await api.getCategories(activeToken)
-    setCategories(response.data || [])
+    const data = response.data || []
+    setCategories(data)
+    return data
   }
 
   const addCategory = async (payload) => {
@@ -251,6 +283,17 @@ export const AppProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
+  // Light polling so the "email not verified" state clears itself across
+  // the app (banner, feature guards) as soon as the user verifies in
+  // another tab, without requiring a logout/login cycle.
+  useEffect(() => {
+    if (!token || !user || user.emailVerified) return undefined
+    const interval = setInterval(() => {
+      refreshUser().catch(() => {})
+    }, 20000)
+    return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, user?.emailVerified])
 
   const value = useMemo(
     () => ({
@@ -292,6 +335,10 @@ export const AppProvider = ({ children }) => {
       convertToPKR,
       refreshExchangeRate,
       updateExchangeRate,
+      refreshUser,
+      sendVerificationEmail,
+      verificationBannerDismissed,
+      dismissVerificationBanner,
     }),
     [
       user,
@@ -306,6 +353,7 @@ export const AppProvider = ({ children }) => {
       loans,
       transfers,
       exchangeRate,
+      verificationBannerDismissed,
     ],
   )
 

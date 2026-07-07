@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
+import VerificationBanner from '../components/VerificationBanner'
 import { useAppContext } from '../context/AppContext'
 
 const MainLayout = () => {
@@ -22,6 +23,7 @@ const MainLayout = () => {
         </div>
         <div className="flex min-h-screen flex-col md:ml-[240px]">
           <Navbar />
+          <VerificationBanner />
           <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6">
             <Outlet />
           </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import Card from '../../components/Card'
 import Input from '../../components/Input'
+import VerificationBadge from '../../components/VerificationBadge'
 import { useAppContext } from '../../context/AppContext'
 import { api } from '../../services/api'
 
@@ -25,6 +26,7 @@ const Profile = () => {
     refreshCategories,
     addCategory,
     deleteCategory,
+    sendVerificationEmail,
   } = useAppContext()
   const [form, setForm] = useState({ name: '', openingBalancePKR: '' })
   const [categoryForm, setCategoryForm] = useState({ name: '', type: 'expense' })
@@ -35,6 +37,21 @@ const Profile = () => {
   const [resetLoading, setResetLoading] = useState(false)
   const [resetError, setResetError] = useState('')
   const [resetMessage, setResetMessage] = useState('')
+  const [verifyStatus, setVerifyStatus] = useState('idle')
+  const [verifyMessage, setVerifyMessage] = useState('')
+
+  const handleSendVerification = async () => {
+    setVerifyStatus('sending')
+    setVerifyMessage('')
+    try {
+      const response = await sendVerificationEmail()
+      setVerifyStatus('sent')
+      setVerifyMessage(response?.message || 'Verification email sent. Please check your inbox.')
+    } catch (err) {
+      setVerifyStatus('error')
+      setVerifyMessage(err.message || 'Failed to send verification email.')
+    }
+  }
 
   useEffect(() => {
     refreshAccounts()
@@ -128,7 +145,10 @@ const Profile = () => {
             <p className="text-xs uppercase tracking-[0.2em] text-app-muted">
               Email
             </p>
-            <p className="text-base text-app-text">{user?.email}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-base text-app-text">{user?.email}</p>
+              <VerificationBadge verified={Boolean(user?.emailVerified)} />
+            </div>
           </div>
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-app-muted">
@@ -143,6 +163,34 @@ const Profile = () => {
             <p className="text-base text-app-text">{user?.program}</p>
           </div>
         </div>
+        {!user?.emailVerified ? (
+          <div className="mt-4 rounded-xl border border-app-border bg-app-surface-soft p-4">
+            <p className="text-sm text-app-text">
+              Verify your email to unlock Group Expenses and future collaborative features.
+            </p>
+            {verifyMessage ? (
+              <p
+                className={`mt-2 text-xs font-medium ${
+                  verifyStatus === 'error' ? 'text-app-expense' : 'text-app-income'
+                }`}
+              >
+                {verifyMessage}
+              </p>
+            ) : null}
+            <Button
+              className="mt-3"
+              size="sm"
+              onClick={handleSendVerification}
+              disabled={verifyStatus === 'sending'}
+            >
+              {verifyStatus === 'sending'
+                ? 'Sending...'
+                : verifyStatus === 'sent'
+                  ? 'Resend verification email'
+                  : 'Verify Email'}
+            </Button>
+          </div>
+        ) : null}
       </Card>
       <Card title="Accounts" subtitle="Add your accounts and opening balances.">
         <form className="grid gap-4 md:grid-cols-3" onSubmit={handleAddAccount}>
