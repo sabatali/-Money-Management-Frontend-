@@ -4,6 +4,7 @@ import Button from '../../components/Button'
 import Card from '../../components/Card'
 import Input from '../../components/Input'
 import AccountSelect from '../../components/AccountSelect'
+import SetupRequiredNotice from '../../components/SetupRequiredNotice'
 import { useEnsureAccountBalances } from '../../hooks/useEnsureAccountBalances'
 import { useAppContext } from '../../context/AppContext'
 import { labels } from '../../constants/labels'
@@ -29,7 +30,7 @@ const LoanForm = () => {
     addLoan,
     updateLoan,
   } = useAppContext()
-  const { accountBalances } = useEnsureAccountBalances()
+  const { accounts, accountBalances } = useEnsureAccountBalances()
   const editing = Boolean(id)
   const [form, setForm] = useState(emptyForm)
   const [warning, setWarning] = useState('')
@@ -148,6 +149,8 @@ const LoanForm = () => {
     (form.type === 'Borrowed' &&
       (form.status === 'Pending' || form.status === 'Returned'))
 
+  const needsAccount = !editing && accounts.length === 0
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -162,6 +165,14 @@ const LoanForm = () => {
         </Link>
       </div>
 
+      {needsAccount ? (
+        <SetupRequiredNotice
+          title="Add an account first"
+          message="You need at least one account (like Cash or a bank) before you can track a loan."
+          actionLabel="Add an account"
+          actionTo="/accounts"
+        />
+      ) : (
       <Card>
         <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
           <Input
@@ -257,6 +268,7 @@ const LoanForm = () => {
           ) : null}
         </form>
       </Card>
+      )}
     </div>
   )
 }

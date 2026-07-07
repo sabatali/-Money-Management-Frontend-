@@ -6,6 +6,7 @@ const AppContext = createContext(null)
 const TOKEN_KEY = 'sem_token'
 const USER_KEY = 'sem_user'
 const VERIFY_BANNER_DISMISSED_KEY = 'sem_verify_banner_dismissed'
+const SETUP_BANNER_DISMISSED_KEY = 'sem_setup_banner_dismissed'
 
 export const AppProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY))
@@ -30,12 +31,20 @@ export const AppProvider = ({ children }) => {
   const [verificationBannerDismissed, setVerificationBannerDismissed] = useState(
     () => sessionStorage.getItem(VERIFY_BANNER_DISMISSED_KEY) === 'true',
   )
+  const [setupBannerDismissed, setSetupBannerDismissed] = useState(
+    () => sessionStorage.getItem(SETUP_BANNER_DISMISSED_KEY) === 'true',
+  )
 
   const isAuthenticated = Boolean(token)
 
   const dismissVerificationBanner = () => {
     sessionStorage.setItem(VERIFY_BANNER_DISMISSED_KEY, 'true')
     setVerificationBannerDismissed(true)
+  }
+
+  const dismissSetupBanner = () => {
+    sessionStorage.setItem(SETUP_BANNER_DISMISSED_KEY, 'true')
+    setSetupBannerDismissed(true)
   }
 
   const refreshUser = async (overrideToken) => {
@@ -82,6 +91,8 @@ export const AppProvider = ({ children }) => {
       localStorage.setItem(USER_KEY, JSON.stringify(response.user))
       sessionStorage.removeItem(VERIFY_BANNER_DISMISSED_KEY)
       setVerificationBannerDismissed(false)
+      sessionStorage.removeItem(SETUP_BANNER_DISMISSED_KEY)
+      setSetupBannerDismissed(false)
       const userAccounts = await refreshAccounts(response.token)
       await refreshAccountBalances(response.token)
       const userCategories = await refreshCategories(response.token)
@@ -110,6 +121,8 @@ export const AppProvider = ({ children }) => {
       localStorage.setItem(USER_KEY, JSON.stringify(response.user))
       sessionStorage.removeItem(VERIFY_BANNER_DISMISSED_KEY)
       setVerificationBannerDismissed(false)
+      sessionStorage.removeItem(SETUP_BANNER_DISMISSED_KEY)
+      setSetupBannerDismissed(false)
       const userAccounts = await refreshAccounts(response.token)
       await refreshAccountBalances(response.token)
       const userCategories = await refreshCategories(response.token)
@@ -339,6 +352,8 @@ export const AppProvider = ({ children }) => {
       sendVerificationEmail,
       verificationBannerDismissed,
       dismissVerificationBanner,
+      setupBannerDismissed,
+      dismissSetupBanner,
     }),
     [
       user,
@@ -354,6 +369,7 @@ export const AppProvider = ({ children }) => {
       transfers,
       exchangeRate,
       verificationBannerDismissed,
+      setupBannerDismissed,
     ],
   )
 

@@ -4,6 +4,7 @@ import Button from '../../components/Button'
 import Card from '../../components/Card'
 import Input from '../../components/Input'
 import AccountSelect from '../../components/AccountSelect'
+import SetupRequiredNotice from '../../components/SetupRequiredNotice'
 import { useEnsureAccountBalances } from '../../hooks/useEnsureAccountBalances'
 import { useAppContext } from '../../context/AppContext'
 
@@ -30,7 +31,7 @@ const TransactionForm = () => {
     updateTransaction,
     convertToPKR,
   } = useAppContext()
-  const { accountBalances } = useEnsureAccountBalances()
+  const { accounts, accountBalances } = useEnsureAccountBalances()
   const editing = Boolean(id)
   const [form, setForm] = useState(emptyForm)
   const [warning, setWarning] = useState('')
@@ -90,6 +91,9 @@ const TransactionForm = () => {
 
   const conversionPreview = convertToPKR(Number(form.amount || 0), form.currency)
 
+  const needsAccount = !editing && accounts.length === 0
+  const needsCategory = !editing && !needsAccount && categories.length === 0
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -106,6 +110,21 @@ const TransactionForm = () => {
         </Link>
       </div>
 
+      {needsAccount ? (
+        <SetupRequiredNotice
+          title="Add an account first"
+          message="You need at least one account (like Cash or a bank) before you can record a transaction."
+          actionLabel="Add an account"
+          actionTo="/accounts"
+        />
+      ) : needsCategory ? (
+        <SetupRequiredNotice
+          title="Add a category first"
+          message="You need at least one expense or income category before you can record a transaction."
+          actionLabel="Add a category"
+          actionTo="/profile"
+        />
+      ) : (
       <Card>
         <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-2 text-sm">
@@ -206,6 +225,7 @@ const TransactionForm = () => {
           </div>
         </form>
       </Card>
+      )}
     </div>
   )
 }
