@@ -23,12 +23,12 @@ const Register = () => {
     event.preventDefault()
     setError('')
     try {
-      await register({
+      const result = await register({
         name: form.name,
         email: form.email,
         password: form.password,
       })
-      navigate('/')
+      navigate(result?.needsOnboarding === false ? '/' : '/onboarding')
     } catch (err) {
       setError(err.message || 'Registration failed.')
     }

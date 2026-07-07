@@ -32,6 +32,14 @@ const request = async (path, { method = 'GET', token, body } = {}) => {
 export const api = {
   login: (data) => request('/auth/login', { method: 'POST', body: data }),
   register: (data) => request('/auth/register', { method: 'POST', body: data }),
+  getMe: (token) => request('/auth/me', { token }),
+  sendVerificationEmail: (token) =>
+    request('/auth/verify-email/send', { method: 'POST', token }),
+  verifyEmail: (verificationToken) =>
+    request('/auth/verify-email', {
+      method: 'POST',
+      body: { token: verificationToken },
+    }),
 
   getGroups: (token) => request('/groups', { token }),
   getGroup: (token, id) => request(`/groups/${id}`, { token }),
@@ -92,6 +100,8 @@ export const api = {
   getAccountBalances: (token) => request('/accounts/balances', { token }),
   createAccount: (token, data) =>
     request('/accounts', { method: 'POST', token, body: data }),
+  bulkCreateAccounts: (token, items) =>
+    request('/accounts/bulk', { method: 'POST', token, body: { items } }),
   updateAccount: (token, id, data) =>
     request(`/accounts/${id}`, { method: 'PUT', token, body: data }),
   deleteAccount: (token, id) =>
@@ -112,10 +122,16 @@ export const api = {
   getCategories: (token) => request('/categories', { token }),
   createCategory: (token, data) =>
     request('/categories', { method: 'POST', token, body: data }),
+  bulkCreateCategories: (token, items) =>
+    request('/categories/bulk', { method: 'POST', token, body: { items } }),
   updateCategory: (token, id, data) =>
     request(`/categories/${id}`, { method: 'PUT', token, body: data }),
   deleteCategory: (token, id) =>
     request(`/categories/${id}`, { method: 'DELETE', token }),
+
+  getMasterAccounts: (token) => request('/master-data/accounts', { token }),
+  getMasterCategories: (token, type) =>
+    request(`/master-data/categories${type ? `?type=${type}` : ''}`, { token }),
 
   getLoans: (token) => request('/loans', { token }),
   createLoan: (token, data) =>
