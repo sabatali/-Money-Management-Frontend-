@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Compass } from 'lucide-react'
 import Card from './Card'
 import Button from './Button'
 
@@ -18,8 +19,8 @@ const SetupRequiredNotice = ({
   return (
     <Card>
       <div className="flex flex-col items-center gap-3 py-8 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-app-accent-muted text-2xl">
-          🧭
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-app-accent-muted text-app-accent">
+          <Compass size={22} />
         </div>
         <h3 className="text-base font-semibold text-app-text">{title}</h3>
         <p className="max-w-sm text-sm text-app-muted">{message}</p>

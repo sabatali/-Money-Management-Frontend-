@@ -4,6 +4,7 @@ import { useAppContext } from '../../context/AppContext'
 import { api } from '../../services/api'
 import Button from '../../components/Button'
 import Card from '../../components/Card'
+import Logo from '../../components/Logo'
 import SearchableChecklist from '../../components/SearchableChecklist'
 import { theme } from '../../styles/theme'
 import {
@@ -247,9 +248,7 @@ const Onboarding = () => {
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-app-accent text-sm font-bold text-app-base shadow-lg shadow-app-accent/25">
-              {theme.brand.shortName}
-            </div>
+            <Logo size="lg" />
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-app-muted">
                 Let's get you set up

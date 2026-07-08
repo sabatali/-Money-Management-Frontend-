@@ -1,5 +1,5 @@
 {
-  "name": "frontend-react",
+  "name": "libramate-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,9 +13,12 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
+    "framer-motion": "^12.42.2",
+    "lucide-react": "^1.23.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0",
+    "recharts": "^3.9.2",
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {

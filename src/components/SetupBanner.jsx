@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Compass } from 'lucide-react'
 import Button from './Button'
 import { useAppContext } from '../context/AppContext'
 
@@ -19,7 +20,9 @@ const SetupBanner = () => {
     <div className="border-b border-app-border-strong bg-app-surface-soft px-4 py-3 md:px-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <span className="text-lg leading-none">🧭</span>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-app-info-muted text-app-info">
+            <Compass size={16} />
+          </span>
           <div>
             <p className="text-sm font-semibold text-app-text">
               Finish setting up your accounts and categories.
