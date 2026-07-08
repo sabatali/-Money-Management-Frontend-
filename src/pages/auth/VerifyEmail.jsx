@@ -46,17 +46,24 @@ const VerifyEmail = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-app-base px-4 text-app-text">
-      <div className="w-full max-w-md rounded-3xl border border-app-border bg-app-surface p-8 text-center shadow-xl shadow-black/30">
-        <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-app-accent text-sm font-bold text-app-base shadow-lg shadow-app-accent/25">
-          {theme.brand.shortName}
+      <div className="w-full max-w-md rounded-3xl border border-app-border bg-app-surface p-8 text-center shadow-elevation-3">
+        <div className="mx-auto mb-5 flex justify-center">
+          <Logo size="lg" />
         </div>
 
         {status === 'verifying' ? (
-          <p className="text-sm text-app-muted">Verifying your email...</p>
+          <>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-app-surface-elevated">
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-app-border-strong border-t-app-accent" />
+            </div>
+            <p className="mt-4 text-sm text-app-muted">Verifying your email...</p>
+          </>
         ) : status === 'success' ? (
           <>
-            <p className="text-4xl">✅</p>
-            <h2 className="mt-3 text-lg font-semibold text-app-text">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-app-success-muted text-app-success">
+              <CheckCircle2 size={26} />
+            </div>
+            <h2 className="mt-4 text-lg font-semibold text-app-text">
               Email successfully verified.
             </h2>
             <p className="mt-2 text-sm text-app-muted">{message}</p>
@@ -68,8 +75,10 @@ const VerifyEmail = () => {
           </>
         ) : (
           <>
-            <p className="text-4xl">⚠️</p>
-            <h2 className="mt-3 text-lg font-semibold text-app-text">Verification failed</h2>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-app-danger-muted text-app-danger">
+              <AlertTriangle size={24} />
+            </div>
+            <h2 className="mt-4 text-lg font-semibold text-app-text">Verification failed</h2>
             <p className="mt-2 text-sm text-app-muted">{message}</p>
             <Link to={isAuthenticated ? '/profile' : '/login'}>
               <Button className="mt-6 w-full" variant="secondary">
