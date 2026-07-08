@@ -1,3 +1,4 @@
+import { Download } from 'lucide-react'
 import Button from './Button'
 import VerificationBadge from './VerificationBadge'
 import { useAppContext } from '../context/AppContext'
@@ -7,13 +8,13 @@ const Navbar = ({ title, subtitle, actions }) => {
   const { user } = useAppContext()
 
   return (
-    <div className="flex flex-col gap-4 border-b border-app-border bg-app-surface-soft/50 px-4 py-5 backdrop-blur-sm md:flex-row md:items-center md:justify-between md:px-6">
+    <div className="flex flex-col gap-4 border-b border-app-border bg-app-surface-soft/60 px-4 py-5 backdrop-blur-md md:flex-row md:items-center md:justify-between md:px-6">
       <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-app-muted">
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-app-muted">
           {theme.brand.name} · {theme.brand.tagline}
         </p>
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-2xl font-semibold text-app-text">
+        <div className="mt-1 flex flex-wrap items-center gap-2.5">
+          <h2 className="text-2xl font-bold tracking-tight text-app-text">
             {title || 'Welcome back'}
           </h2>
           {user ? <VerificationBadge verified={Boolean(user.emailVerified)} /> : null}
@@ -25,6 +26,7 @@ const Navbar = ({ title, subtitle, actions }) => {
       <div className="flex flex-wrap items-center gap-2">
         {actions}
         <Button variant="secondary" size="sm">
+          <Download size={14} />
           Export
         </Button>
       </div>

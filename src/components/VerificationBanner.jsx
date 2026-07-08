@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Mail } from 'lucide-react'
 import Button from './Button'
 import { useAppContext } from '../context/AppContext'
 
@@ -56,10 +57,12 @@ const VerificationBanner = () => {
     <div className="border-b border-app-accent/30 bg-app-accent-muted px-4 py-3 md:px-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <span className="text-lg leading-none">📧</span>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-app-accent/15 text-app-accent">
+            <Mail size={16} />
+          </span>
           <div>
             <p className="text-sm font-semibold text-app-text">
-              Verify your email to unlock all FinVault features.
+              Verify your email to unlock all LibraMate features.
             </p>
             <p className="text-xs text-app-muted">
               Your email is not verified yet. Verify now to securely use Group Expenses and

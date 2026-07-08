@@ -84,7 +84,10 @@ const applyDirectedPayment = (directed, fromId, toId, amount) => {
 export const buildPairwiseNetSettlements = (expenses, transfers, balances) => {
   const nameById = {}
   balances.forEach((item) => {
-    nameById[String(item.userId)] = item.user
+    // `_id` on populated expense/transfer refs is the real userId for
+    // registered members, and the memberId for guests — key by whichever
+    // applies so both resolve to a display name.
+    nameById[String(item.userId ?? item.memberId)] = item.user
   })
 
   const directed = {}

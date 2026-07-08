@@ -269,7 +269,7 @@ const GroupSettlements = () => {
         <Card title={labels.groups.balancesTitle} subtitle={labels.groups.balancesSubtitle}>
           <div className="grid gap-3">
             {balances.map((item) => (
-              <div key={item.userId} className="space-y-1">
+              <div key={item.memberId || item.userId} className="space-y-1">
                 <BalanceCard name={item.user} balance={item.balance} />
                 {item.balance > 0 ? (
                   <p className="text-xs text-app-income px-1">

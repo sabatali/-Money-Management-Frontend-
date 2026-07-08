@@ -8,6 +8,7 @@ import AccountSelect from '../../components/AccountSelect'
 import { useEnsureAccountBalances } from '../../hooks/useEnsureAccountBalances'
 import Input from '../../components/Input'
 import MemberChip from '../../components/MemberChip'
+import AddMemberModal from '../../components/AddMemberModal'
 import Navbar from '../../components/Navbar'
 import { useAppContext } from '../../context/AppContext'
 import { api } from '../../services/api'
@@ -24,21 +25,32 @@ const GroupDetail = () => {
   const [expenses, setExpenses] = useState([])
   const [balances, setBalances] = useState([])
   const [transfers, setTransfers] = useState([])
+  const [showAddMember, setShowAddMember] = useState(false)
   const [memberEmail, setMemberEmail] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [searchLoading, setSearchLoading] = useState(false)
-  
+  const [guestSubmitting, setGuestSubmitting] = useState(false)
+  const [guestError, setGuestError] = useState('')
+  const [guestActionState, setGuestActionState] = useState({})
+  const [guestEmailDrafts, setGuestEmailDrafts] = useState({})
+
   // Account linking state
   const [myGroupAccounts, setMyGroupAccounts] = useState({ linkedAccounts: [], availableAccounts: [] })
   const [memberAccounts, setMemberAccounts] = useState([])
   const [selectedAccounts, setSelectedAccounts] = useState([])
   const [showLinkAccounts, setShowLinkAccounts] = useState(false)
-  
+
   const [transferForm, setTransferForm] = useState({
     fromUser: '',
     toUser: '',
     amountPKR: '',
     account: '',
+    toAccount: '',
+    date: '',
+  })
+  const [guestPaymentForm, setGuestPaymentForm] = useState({
+    fromUser: '',
+    amountPKR: '',
     toAccount: '',
     date: '',
   })
@@ -48,12 +60,16 @@ const GroupDetail = () => {
 
   const currentUserId = user?._id || user?.id
 
+  const groupMembers = useMemo(() => group?.groupMembers || [], [group])
+
   const otherMembers = useMemo(
-    () =>
-      (group?.members || []).filter(
-        (member) => String(member.user._id) !== String(currentUserId),
-      ),
-    [group?.members, currentUserId],
+    () => groupMembers.filter((member) => String(member._id) !== String(currentUserId)),
+    [groupMembers, currentUserId],
+  )
+
+  const guestMembers = useMemo(
+    () => groupMembers.filter((member) => member.memberType === 'guest'),
+    [groupMembers],
   )
 
   const fetchAll = async () => {
@@ -74,14 +90,12 @@ const GroupDetail = () => {
       setTransfers(transferRes.data || [])
       setMyGroupAccounts(myAccountsRes.data || { linkedAccounts: [], availableAccounts: [] })
       setMemberAccounts(memberAccountsRes.data || [])
-      const members = groupRes.data.members || []
-      const others = members.filter(
-        (member) => String(member.user._id) !== String(user?._id || user?.id),
-      )
+      const members = groupRes.data.groupMembers || []
+      const others = members.filter((member) => String(member._id) !== String(currentUserId))
       setTransferForm((prev) => ({
         ...prev,
-        fromUser: user?._id || user?.id || '',
-        toUser: others[0]?.user?._id || prev.toUser || '',
+        fromUser: currentUserId || '',
+        toUser: others[0]?._id || prev.toUser || '',
       }))
     } catch (err) {
       setError(err.message || 'Failed to load group.')
@@ -92,6 +106,7 @@ const GroupDetail = () => {
 
   useEffect(() => {
     fetchAll()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const totalSpend = useMemo(
@@ -104,8 +119,7 @@ const GroupDetail = () => {
     [balances],
   )
 
-  const handleSearchMembers = async (event) => {
-    event.preventDefault()
+  const handleSearchMembers = async () => {
     setError('')
     try {
       if (!memberEmail.trim()) return
@@ -125,9 +139,51 @@ const GroupDetail = () => {
       await api.addGroupMember(token, id, { userId })
       setSearchResults([])
       setMemberEmail('')
+      setShowAddMember(false)
       fetchAll()
     } catch (err) {
       setError(err.message || 'Failed to add member.')
+    }
+  }
+
+  const handleAddGuest = async (guestForm) => {
+    setGuestError('')
+    setGuestSubmitting(true)
+    try {
+      await api.addGuestMember(token, id, guestForm)
+      setShowAddMember(false)
+      fetchAll()
+      return true
+    } catch (err) {
+      setGuestError(err.message || 'Failed to add guest.')
+      return false
+    } finally {
+      setGuestSubmitting(false)
+    }
+  }
+
+  const handleInviteGuest = async (memberId, emailOverride) => {
+    setGuestActionState((prev) => ({ ...prev, [memberId]: { loading: true } }))
+    try {
+      const payload = emailOverride ? { email: emailOverride } : {}
+      await api.inviteGuestMember(token, id, memberId, payload)
+      setGuestActionState((prev) => ({ ...prev, [memberId]: { message: 'Invite sent!' } }))
+      fetchAll()
+    } catch (err) {
+      setGuestActionState((prev) => ({
+        ...prev,
+        [memberId]: { error: err.message || 'Failed to send invite.' },
+      }))
+    }
+  }
+
+  const handleRemoveMember = async (memberId) => {
+    setError('')
+    try {
+      await api.removeGroupMember(token, id, memberId)
+      fetchAll()
+    } catch (err) {
+      setError(err.message || 'Failed to remove member.')
     }
   }
 
@@ -175,19 +231,19 @@ const GroupDetail = () => {
     event.preventDefault()
     setError('')
     setWarning('')
-    
+
     // Check if user has linked accounts
     if (myGroupAccounts.linkedAccounts.length === 0) {
       setError('Please link your accounts to this group first.')
       return
     }
-    
+
     // Validate from account is one of user's linked accounts
     if (!myGroupAccounts.linkedAccounts.includes(transferForm.account)) {
       setError('Please select one of your linked accounts.')
       return
     }
-    
+
     try {
       const selected = accountBalances.find(
         (account) => account.name === transferForm.account,
@@ -212,24 +268,57 @@ const GroupDetail = () => {
     }
   }
 
+  const handleGuestPaymentChange = (event) => {
+    const { name, value } = event.target
+    setGuestPaymentForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleRecordGuestPayment = async (event) => {
+    event.preventDefault()
+    setError('')
+    setWarning('')
+
+    if (!guestPaymentForm.fromUser) {
+      setError('Please select which guest paid.')
+      return
+    }
+    if (myGroupAccounts.linkedAccounts.length === 0 || !guestPaymentForm.toAccount) {
+      setError('Please select which of your linked accounts received the payment.')
+      return
+    }
+
+    try {
+      await api.createGroupTransfer(token, id, {
+        fromUser: guestPaymentForm.fromUser,
+        toUser: currentUserId,
+        amountPKR: Number(guestPaymentForm.amountPKR),
+        toAccount: guestPaymentForm.toAccount,
+        date: guestPaymentForm.date,
+      })
+      setGuestPaymentForm({ fromUser: '', amountPKR: '', toAccount: '', date: '' })
+      await refreshAccountBalances()
+      fetchAll()
+    } catch (err) {
+      setError(err.message || 'Failed to record guest payment.')
+    }
+  }
+
   const handleConfirmTransfer = async (transferId, selectedToAccount) => {
     setError('')
-    
+
     // Check if receiver has linked accounts
     if (myGroupAccounts.linkedAccounts.length === 0) {
       setError('Please link your accounts to this group first.')
       return
     }
-    
+
     // Validate to account is one of receiver's linked accounts
     if (!selectedToAccount || !myGroupAccounts.linkedAccounts.includes(selectedToAccount)) {
       setError('Please select one of your linked accounts to receive the payment.')
       return
     }
-    
+
     try {
-      // First update the transfer with the selected account
-      // Note: You may need to add an API endpoint to update the toAccount before confirming
       await api.confirmGroupTransfer(token, id, transferId, {
         toAccount: selectedToAccount,
       })
@@ -251,17 +340,8 @@ const GroupDetail = () => {
     }
   }
 
-  // Get linked accounts for a specific user
-  const getReceiverLinkedAccounts = (userId) => {
-    const memberAccount = memberAccounts.find(
-      (ma) => String(ma.userId) === String(userId)
-    )
-    return memberAccount?.accounts || []
-  }
-
-  const isAdmin = group?.members?.some(
-    (member) =>
-      member.role === 'admin' && String(member.user._id) === String(user?.id),
+  const isAdmin = groupMembers.some(
+    (member) => member.role === 'admin' && String(member._id) === String(currentUserId),
   )
 
   return (
@@ -296,38 +376,97 @@ const GroupDetail = () => {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card title="Members" subtitle="Everyone in this group.">
-          <div className="flex flex-wrap items-center gap-2">
-            {group?.members?.map((member) => {
-              const linkedAccs = getLinkedAccountsForUser(member.user._id)
+          <div className="space-y-3">
+            {groupMembers.map((member) => {
+              const linkedAccs = member.memberType === 'registered' ? getLinkedAccountsForUser(member.userId) : []
+              const actionState = guestActionState[member._id] || {}
+              const emailDraft = guestEmailDrafts[member._id] ?? ''
               return (
-                <div key={member.user._id} className="flex flex-col">
-                  <MemberChip
-                    name={member.user.name}
-                    role={member.role}
-                  />
-                  {linkedAccs.length > 0 && (
-                    <span className="text-xs text-app-muted/70 ml-1">
+                <div
+                  key={member._id}
+                  className="rounded-xl border border-app-border bg-app-surface-soft p-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <MemberChip name={member.name} role={member.role} memberType={member.memberType} />
+                    {isAdmin ? (
+                      <Button size="sm" variant="ghost" onClick={() => handleRemoveMember(member._id)}>
+                        Remove
+                      </Button>
+                    ) : null}
+                  </div>
+                  {linkedAccs.length > 0 ? (
+                    <span className="mt-1 block text-xs text-app-muted/70">
                       {linkedAccs.join(', ')}
                     </span>
-                  )}
+                  ) : null}
+                  {member.memberType === 'guest' ? (
+                    <div className="mt-2 space-y-1">
+                      {member.email ? (
+                        <p className="text-xs text-app-muted">{member.email}</p>
+                      ) : null}
+                      {isAdmin ? (
+                        member.email ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={actionState.loading}
+                              onClick={() => handleInviteGuest(member._id)}
+                            >
+                              {actionState.loading ? 'Sending...' : 'Invite to LibraMate'}
+                            </Button>
+                            {actionState.message ? (
+                              <span className="text-xs text-app-income">{actionState.message}</span>
+                            ) : null}
+                            {actionState.error ? (
+                              <span className="text-xs text-app-expense">{actionState.error}</span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <input
+                              type="email"
+                              value={emailDraft}
+                              onChange={(event) =>
+                                setGuestEmailDrafts((prev) => ({ ...prev, [member._id]: event.target.value }))
+                              }
+                              placeholder="Add email to invite"
+                              className="rounded-lg border border-app-border-strong bg-app-surface px-2 py-1.5 text-xs text-app-text"
+                            />
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={!emailDraft || actionState.loading}
+                              onClick={() => handleInviteGuest(member._id, emailDraft)}
+                            >
+                              {actionState.loading ? 'Sending...' : 'Add & Invite'}
+                            </Button>
+                            {actionState.error ? (
+                              <span className="text-xs text-app-expense">{actionState.error}</span>
+                            ) : null}
+                          </div>
+                        )
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               )
             })}
           </div>
-          
+
           {/* Link Accounts Section */}
           <div className="mt-4 rounded-2xl border border-app-border bg-app-surface-soft p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-app-muted">Your Linked Accounts</p>
                 <p className="text-sm text-app-text">
-                  {myGroupAccounts.linkedAccounts.length > 0 
+                  {myGroupAccounts.linkedAccounts.length > 0
                     ? myGroupAccounts.linkedAccounts.join(', ')
                     : 'No accounts linked'}
                 </p>
               </div>
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 variant="secondary"
                 onClick={() => {
                   setSelectedAccounts(myGroupAccounts.linkedAccounts)
@@ -347,7 +486,7 @@ const GroupDetail = () => {
               </p>
               <div className="space-y-2">
                 {myGroupAccounts.availableAccounts.map((account) => (
-                  <label 
+                  <label
                     key={account.name}
                     className="flex items-center gap-2 p-2 rounded-lg border border-app-border bg-app-surface-soft cursor-pointer hover:bg-app-primary-muted"
                   >
@@ -370,8 +509,8 @@ const GroupDetail = () => {
                 <Button size="sm" onClick={handleLinkAccounts}>
                   Save
                 </Button>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   variant="ghost"
                   onClick={() => {
                     setShowLinkAccounts(false)
@@ -391,53 +530,16 @@ const GroupDetail = () => {
             </p>
           </div>
           {isAdmin ? (
-            <form
-              className="mt-4 flex flex-col gap-3"
-              onSubmit={handleSearchMembers}
-            >
-              <Input
-                label="Search member by email"
-                type="email"
-                value={memberEmail}
-                onChange={(event) => setMemberEmail(event.target.value)}
-                placeholder="roommate@email.com"
-                required
-              />
-              <Button type="submit" disabled={searchLoading}>
-                {searchLoading ? 'Searching...' : 'Search'}
-              </Button>
-            </form>
-          ) : null}
-          {isAdmin && searchResults.length ? (
-            <div className="mt-4 space-y-2">
-              {searchResults.map((userResult) => (
-                <div
-                  key={userResult.id}
-                  className="flex items-center justify-between rounded-xl border border-app-border bg-app-surface-soft px-3 py-2 text-sm"
-                >
-                  <div>
-                    <div className="text-app-text">{userResult.name}</div>
-                    <div className="text-xs text-app-muted">
-                      {userResult.email}
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => handleAddMember(userResult.id)}
-                  >
-                    Add
-                  </Button>
-                </div>
-              ))}
-            </div>
+            <Button className="mt-4 w-full" variant="secondary" onClick={() => setShowAddMember(true)}>
+              + Add member
+            </Button>
           ) : null}
         </Card>
 
         <Card title={labels.groups.balancesTitle} subtitle={labels.groups.balancesSubtitle}>
           <div className="grid gap-3">
             {balances.map((item) => (
-              <BalanceCard key={item.userId} name={item.user} balance={item.balance} />
+              <BalanceCard key={item.memberId || item.userId} name={item.user} balance={item.balance} />
             ))}
           </div>
         </Card>
@@ -478,7 +580,7 @@ const GroupDetail = () => {
               <ExpenseItem
                 key={expense._id}
                 expense={expense}
-                currentUserId={user?.id}
+                currentUserId={currentUserId}
                 balances={balances}
                 onPayShare={({ fromUserId, toUserId, amountPKR }) => {
                   setTransferForm((prev) => ({
@@ -523,8 +625,9 @@ const GroupDetail = () => {
               >
                 <option value="">Select member</option>
                 {otherMembers.map((member) => (
-                  <option key={member.user._id} value={member.user._id}>
-                    {member.user.name}
+                  <option key={member._id} value={member._id}>
+                    {member.name}
+                    {member.memberType === 'guest' ? ' (Guest)' : ''}
                   </option>
                 ))}
               </select>
@@ -551,7 +654,8 @@ const GroupDetail = () => {
                 To Account (Receiver will select on confirmation)
               </label>
               <div className="text-xs text-app-muted/70 px-1">
-                Receiver will choose their linked account when confirming this payment.
+                If the receiver is a guest, this is recorded immediately — guests don't need to confirm.
+                Otherwise, the receiver will choose their linked account when confirming this payment.
               </div>
             </div>
             <Input
@@ -571,22 +675,77 @@ const GroupDetail = () => {
           </form>
           )}
 
+          {guestMembers.length > 0 ? (
+            <div className="mt-4 rounded-2xl border border-app-border bg-app-surface-soft p-4">
+              <p className="text-sm font-medium text-app-text">Record a guest's payment</p>
+              <p className="mt-1 text-xs text-app-muted">
+                A guest paid you back in cash or another way — log it here. No confirmation needed.
+              </p>
+              <form className="mt-3 space-y-3" onSubmit={handleRecordGuestPayment}>
+                <div className="flex flex-col gap-2 text-sm">
+                  <label className="font-medium text-app-text">Paid by</label>
+                  <select
+                    name="fromUser"
+                    value={guestPaymentForm.fromUser}
+                    onChange={handleGuestPaymentChange}
+                    className="rounded-lg border border-app-border-strong bg-app-surface px-3 py-2.5 text-app-text"
+                    required
+                  >
+                    <option value="">Select guest</option>
+                    {guestMembers.map((member) => (
+                      <option key={member._id} value={member._id}>
+                        {member.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Input
+                  label="Amount (PKR)"
+                  name="amountPKR"
+                  type="number"
+                  value={guestPaymentForm.amountPKR}
+                  onChange={handleGuestPaymentChange}
+                  required
+                />
+                <AccountSelect
+                  label="Received into"
+                  name="toAccount"
+                  value={guestPaymentForm.toAccount}
+                  onChange={handleGuestPaymentChange}
+                  accountNames={myGroupAccounts.linkedAccounts}
+                  placeholder="Select your linked account"
+                  required
+                />
+                <Input
+                  label="Date"
+                  name="date"
+                  type="date"
+                  value={guestPaymentForm.date}
+                  onChange={handleGuestPaymentChange}
+                  required
+                />
+                <Button type="submit" variant="secondary">
+                  Save
+                </Button>
+              </form>
+            </div>
+          ) : null}
+
           <div className="mt-4 space-y-2 text-xs">
             {transfers.map((transfer) => {
               const toUserId = transfer.toUser?._id || transfer.toUser
-              const currentUserId = user?._id || user?.id
-              const isReceiver = String(toUserId) === String(currentUserId)
               const transferStatus = transfer.status || 'Pending'
+              const isReceiver = String(toUserId) === String(currentUserId)
               const isPending = transferStatus === 'Pending'
               const isConfirmed = transferStatus === 'Confirmed'
               const isRejected = transferStatus === 'Rejected'
-              
+
               return (
                 <div
                   key={transfer._id}
                   className={`rounded-xl border px-3 py-2 ${
-                    isConfirmed 
-                      ? 'border-app-border-strong bg-app-income-muted' 
+                    isConfirmed
+                      ? 'border-app-border-strong bg-app-income-muted'
                       : isRejected
                       ? 'border-app-expense/30 bg-app-expense-muted'
                       : 'border-amber-500/20 bg-amber-500/10'
@@ -600,7 +759,7 @@ const GroupDetail = () => {
                       {' · PKR '}{transfer.amountPKR}
                     </div>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      isConfirmed 
+                      isConfirmed
                         ? 'bg-app-accent-muted text-app-muted'
                         : isRejected
                         ? 'bg-rose-500/20 text-rose-200'
@@ -619,16 +778,16 @@ const GroupDetail = () => {
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {myGroupAccounts.linkedAccounts.map((accName) => (
-                          <Button 
+                          <Button
                             key={accName}
-                            size="sm" 
+                            size="sm"
                             onClick={() => handleConfirmTransfer(transfer._id, accName)}
                           >
                             Confirm to {accName}
                           </Button>
                         ))}
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="danger"
                           onClick={() => handleRejectTransfer(transfer._id)}
                         >
@@ -656,6 +815,25 @@ const GroupDetail = () => {
           </div>
         </Card>
       </div>
+
+      <AddMemberModal
+        isOpen={showAddMember}
+        onClose={() => {
+          setShowAddMember(false)
+          setSearchResults([])
+          setMemberEmail('')
+          setGuestError('')
+        }}
+        memberEmail={memberEmail}
+        onMemberEmailChange={(event) => setMemberEmail(event.target.value)}
+        onSearchUsers={handleSearchMembers}
+        searchResults={searchResults}
+        searchLoading={searchLoading}
+        onAddRegistered={handleAddMember}
+        onAddGuest={handleAddGuest}
+        guestSubmitting={guestSubmitting}
+        guestError={guestError}
+      />
     </div>
   )
 }

@@ -49,6 +49,16 @@ export const api = {
     request(`/groups/${id}/members`, { method: 'POST', token, body: data }),
   removeGroupMember: (token, id, memberId) =>
     request(`/groups/${id}/members/${memberId}`, { method: 'DELETE', token }),
+  addGuestMember: (token, id, data) =>
+    request(`/groups/${id}/members/guest`, { method: 'POST', token, body: data }),
+  updateGuestMember: (token, id, memberId, data) =>
+    request(`/groups/${id}/members/${memberId}/guest`, { method: 'PUT', token, body: data }),
+  inviteGuestMember: (token, id, memberId, data) =>
+    request(`/groups/${id}/members/${memberId}/invite`, { method: 'POST', token, body: data }),
+  getPendingGuestClaims: (token) =>
+    request('/group-members/pending-claims', { token }),
+  claimGuestMember: (token, memberId) =>
+    request(`/group-members/${memberId}/claim`, { method: 'POST', token, body: {} }),
 
   getGroupExpenses: (token, groupId) =>
     request(`/group-expenses?groupId=${groupId}`, { token }),

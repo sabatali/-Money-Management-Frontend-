@@ -1,31 +1,116 @@
 @import "tailwindcss";
 
 @theme {
-  --color-app-base: #0a0f1a;
+  /* Backgrounds */
+  --color-app-base: #020617;
+  --color-app-base-soft: #0f172a;
   --color-app-surface: #111827;
-  --color-app-surface-soft: #1a2332;
-  --color-app-surface-elevated: #1f2a3d;
-  --color-app-border: rgb(148 163 184 / 0.12);
-  --color-app-border-strong: rgb(148 163 184 / 0.22);
-  --color-app-accent: #e8b84b;
-  --color-app-accent-hover: #f5cc62;
-  --color-app-accent-muted: rgb(232 184 75 / 0.15);
-  --color-app-primary: #4f8ef7;
-  --color-app-primary-muted: rgb(79 142 247 / 0.15);
-  --color-app-income: #2dd4bf;
-  --color-app-income-muted: rgb(45 212 191 / 0.12);
-  --color-app-expense: #f87171;
-  --color-app-expense-muted: rgb(248 113 113 / 0.12);
-  --color-app-text: #f1f5f9;
+  --color-app-surface-soft: #0f172a;
+  --color-app-surface-elevated: #1e293b;
+
+  /* Borders */
+  --color-app-border: #1f2937;
+  --color-app-border-strong: #334155;
+
+  /* Brand */
+  --color-app-accent: #10b981;
+  --color-app-accent-hover: #059669;
+  --color-app-accent-muted: rgb(16 185 129 / 0.14);
+  --color-app-primary: #4f46e5;
+  --color-app-primary-hover: #4338ca;
+  --color-app-primary-muted: rgb(79 70 229 / 0.14);
+
+  /* Text */
+  --color-app-text: #ffffff;
   --color-app-muted: #94a3b8;
-  --color-app-overlay: rgb(10 15 26 / 0.85);
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-app-overlay: rgb(2 6 23 / 0.85);
+
+  /* Semantic status */
+  --color-app-success: #22c55e;
+  --color-app-success-muted: rgb(34 197 94 / 0.14);
+  --color-app-warning: #f59e0b;
+  --color-app-warning-muted: rgb(245 158 11 / 0.14);
+  --color-app-danger: #ef4444;
+  --color-app-danger-muted: rgb(239 68 68 / 0.14);
+  --color-app-info: #3b82f6;
+  --color-app-info-muted: rgb(59 130 246 / 0.14);
+
+  /* Money semantics (aliases kept for backward compatibility) */
+  --color-app-income: #22c55e;
+  --color-app-income-muted: rgb(34 197 94 / 0.14);
+  --color-app-expense: #ef4444;
+  --color-app-expense-muted: rgb(239 68 68 / 0.14);
+
+  /* Group Expense palette */
+  --color-app-receive: #22c55e;
+  --color-app-receive-muted: rgb(34 197 94 / 0.14);
+  --color-app-owe: #ef4444;
+  --color-app-owe-muted: rgb(239 68 68 / 0.14);
+  --color-app-pending: #f59e0b;
+  --color-app-pending-muted: rgb(245 158 11 / 0.14);
+  --color-app-shared: #3b82f6;
+  --color-app-shared-muted: rgb(59 130 246 / 0.14);
+  --color-app-groups: #a855f7;
+  --color-app-groups-muted: rgb(168 85 247 / 0.14);
+  --color-app-completed: #10b981;
+  --color-app-completed-muted: rgb(16 185 129 / 0.14);
+  --color-app-cancelled: #64748b;
+  --color-app-cancelled-muted: rgb(100 116 139 / 0.14);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --shadow-elevation-1: 0 1px 2px rgb(0 0 0 / 0.24);
+  --shadow-elevation-2: 0 8px 24px -8px rgb(0 0 0 / 0.45);
+  --shadow-elevation-3: 0 24px 48px -16px rgb(0 0 0 / 0.55);
+
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-scale-in: scale-in 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-slide-up: slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-shimmer: shimmer 1.8s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      background-position: -400px 0;
+    }
+    100% {
+      background-position: 400px 0;
+    }
+  }
 }
 
 :root {
   color-scheme: dark;
   font-family: var(--font-sans);
+  font-feature-settings: "tnum" 1, "cv11" 1;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -43,10 +128,74 @@ body {
   background-color: var(--color-app-base);
   color: var(--color-app-text);
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgb(79 142 247 / 0.08), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgb(232 184 75 / 0.05), transparent);
+    radial-gradient(ellipse 70% 45% at 50% -10%, rgb(16 185 129 / 0.08), transparent),
+    radial-gradient(ellipse 55% 35% at 100% 0%, rgb(79 70 229 / 0.06), transparent);
+  background-attachment: fixed;
 }
 
 #root {
   min-height: 100vh;
+}
+
+/* Financial figures should use tabular numerals for alignment in lists/tables */
+.tabular-nums,
+.font-numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+::selection {
+  background-color: var(--color-app-accent);
+  color: #ffffff;
+}
+
+/* Thin, unobtrusive scrollbars matching the dark theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-app-border-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-app-border-strong);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-app-surface-elevated);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.06),
+    transparent
+  );
+  animation: shimmer-sweep 1.6s infinite;
+}
+@keyframes shimmer-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

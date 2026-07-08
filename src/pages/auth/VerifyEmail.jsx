@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { CheckCircle2, AlertTriangle } from 'lucide-react'
 import Button from '../../components/Button'
+import Logo from '../../components/Logo'
 import { useAppContext } from '../../context/AppContext'
 import { api } from '../../services/api'
-import { theme } from '../../styles/theme'
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams()
